@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Sparkles, Wand2, Loader2, RefreshCw, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { MODELS } from '../lib/constants';
+import { MODELS, SUGGESTIONS } from '../lib/constants';
 
 interface PromptInputProps {
   prompt: string;
@@ -28,6 +28,47 @@ export function PromptInput({
   error
 }: PromptInputProps) {
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
+
+  // Calculate suggestion
+  const suggestionText = useMemo(() => {
+    if (!prompt || prompt.endsWith(' ') || prompt.endsWith('\n')) return '';
+    
+    // Get the last word or phrase being typed
+    const words = prompt.split(/[\s\n]+/);
+    const lastWord = words[words.length - 1].toLowerCase();
+    
+    if (!lastWord) return '';
+
+    // Find a matching suggestion
+    const match = SUGGESTIONS.find(s => s.toLowerCase().startsWith(lastWord));
+    
+    if (match) {
+      // Return the remaining part of the suggestion
+      return match.substring(lastWord.length);
+    }
+    
+    return '';
+  }, [prompt]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab' && suggestionText) {
+      e.preventDefault();
+      setPrompt(prompt + suggestionText);
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!isGenerating && !isEnhancing && prompt.trim()) {
+        handleGenerate();
+      }
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (ghostRef.current) {
+      ghostRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
 
   return (
     <section className="max-w-4xl mx-auto relative z-20">
@@ -46,12 +87,27 @@ export function PromptInput({
           
           {/* Inner Content */}
           <div className="relative bg-[#0A0A0A]/90 backdrop-blur-2xl rounded-[31px] p-3 flex flex-col">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your component... (e.g., 'A modern pricing card with a popular badge, dark mode, and a call to action button')"
-              className="w-full h-40 bg-transparent text-white placeholder:text-white/30 resize-none outline-none p-5 text-lg custom-scrollbar"
-            />
+            <div className="relative w-full h-40 bg-transparent rounded-t-[19px] overflow-hidden">
+              {/* Ghost text layer */}
+              <div 
+                ref={ghostRef}
+                className="absolute inset-0 p-5 text-lg font-sans whitespace-pre-wrap break-words pointer-events-none overflow-y-auto invisible-scrollbar"
+                aria-hidden="true"
+              >
+                <span className="text-transparent">{prompt}</span>
+                {suggestionText && <span className="text-white/30">{suggestionText}</span>}
+              </div>
+              
+              <textarea
+                ref={textareaRef}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onScroll={handleScroll}
+                placeholder="Describe your component... (e.g., 'A modern pricing card with a popular badge, dark mode, and a call to action button')"
+                className="absolute inset-0 w-full h-full bg-transparent text-white placeholder:text-white/30 resize-none outline-none p-5 text-lg font-sans custom-scrollbar"
+              />
+            </div>
             
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 mt-2 bg-black/40 rounded-2xl border border-white/5 gap-3 sm:gap-0">
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
