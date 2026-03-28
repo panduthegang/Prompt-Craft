@@ -456,7 +456,7 @@ const MatrixRain = () => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="w-full h-full absolute inset-0 opacity-40" />;
+  return <canvas ref={canvasRef} className="w-full h-full absolute inset-0 opacity-100" />;
 };
 
 function SkeletonCard({ index }: { index: number }) {
@@ -483,12 +483,6 @@ function SkeletonCard({ index }: { index: number }) {
       </div>
       <div className="relative flex-1 bg-[#050505] overflow-hidden">
         <MatrixRain />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-6 h-6 text-[#F27D26] animate-spin" />
-            <span className="text-sm font-mono text-[#F27D26] animate-pulse">Writing code...</span>
-          </div>
-        </div>
       </div>
     </motion.div>
   );
