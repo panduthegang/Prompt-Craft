@@ -21,22 +21,25 @@ export interface ComponentVariation {
   code: string;
 }
 
-export async function generateComponents(prompt: string): Promise<ComponentVariation[]> {
+export async function generateComponents(prompt: string, modelName: string = "gemini-3-flash-preview"): Promise<ComponentVariation[]> {
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: modelName,
       contents: `You are an elite, world-class Senior Frontend Engineer and UI/UX Designer. The user wants a UI component based on this description: "${prompt}". 
       
-Generate 3 DISTINCT, breathtaking, high-end, and production-ready variations of this component. These should be the absolute best components built to date, utilizing the full power of modern web development and Tailwind CSS.
+Generate 3 DISTINCT, breathtaking, high-end, and production-ready variations of this component. These should be the absolute best components built to date, utilizing the full power of modern web development, React, and Tailwind CSS.
 
 CRITICAL INSTRUCTIONS:
-1. Use PURE HTML and Tailwind CSS ONLY.
-2. DO NOT generate React components, JSX, or include any 'import' statements.
-3. The HTML MUST be properly indented with line breaks for readability. Do not minify or put everything on one line.
-4. The HTML should be a complete, renderable snippet (it will be placed inside the body tag). Do NOT include <html>, <head>, or <body> tags, just the component markup.
-5. Ensure the components are fully responsive, accessible, and use advanced modern Tailwind classes (e.g., backdrop-blur, complex gradients, grid layouts, animations, transitions, ring utilities, dark mode variants).
-6. Push the boundaries of design. Use micro-interactions (hover/focus states), beautiful typography, perfect spacing, and stunning visual hierarchy.
-7. Make it look like it belongs in a premium, award-winning SaaS product or a top-tier design agency's portfolio.
+1. Use React and Tailwind CSS ONLY.
+2. DO NOT use any 'import' or 'export' statements. React is available globally as 'React'.
+3. Write a single functional component named exactly 'GeneratedComponent'.
+4. For icons, use raw inline SVGs. Do not import external icon libraries.
+5. You can use React hooks (useState, useEffect) by accessing them directly from the global React object (e.g., React.useState).
+6. Ensure the components are fully responsive, accessible, and use advanced modern Tailwind classes (e.g., backdrop-blur, complex gradients, grid layouts, animations, transitions, ring utilities, dark mode variants).
+7. Push the boundaries of design. Use micro-interactions (hover/focus states), beautiful typography, perfect spacing, and stunning visual hierarchy.
+8. Make it look like it belongs in a premium, award-winning SaaS product or a top-tier design agency's portfolio.
+9. Return ONLY the raw JSX code for the component. Do not wrap it in markdown code blocks.
+10. CRITICAL FORMATTING: The JSX code MUST be beautifully formatted with proper indentation (2 spaces) and line breaks. DO NOT return minified code or single-line code. Readability is paramount.
 
 Variation ideas to consider (pick 3 distinct, high-end ones that fit the prompt):
 - Apple-esque Glassmorphism & Blur
@@ -63,7 +66,7 @@ Return a JSON array of exactly 3 objects.`,
               },
               code: {
                 type: Type.STRING,
-                description: "The complete HTML code snippet with Tailwind CSS classes. Do NOT wrap in markdown code blocks.",
+                description: "The complete React JSX code snippet with Tailwind CSS classes. Do NOT wrap in markdown code blocks.",
               },
             },
             required: ["title", "description", "code"],

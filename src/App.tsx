@@ -1,10 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Wand2, Loader2, Code2, Eye, Copy, Check, LayoutTemplate, RefreshCw, Aperture, Hexagon } from 'lucide-react';
+import { Sparkles, Wand2, Loader2, Code2, Eye, Copy, Check, LayoutTemplate, RefreshCw, Aperture, Hexagon, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { enhancePrompt, generateComponents, ComponentVariation } from './services/gemini';
 import { cn } from './lib/utils';
+
+// const SUGGESTIONS = [
+//   "A modern pricing card with a popular badge, dark mode, and a call to action button",
+//   "A sleek, glassmorphism login form with social authentication buttons",
+//   "A brutalist-style newsletter signup section with large typography",
+//   "A minimalist user profile card with a circular avatar and statistics",
+//   "A complex dashboard sidebar navigation with nested menus and icons"
+// ];
 
 export default function App() {
   const [prompt, setPrompt] = useState('');
@@ -12,6 +20,14 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [variations, setVariations] = useState<ComponentVariation[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+
+  const MODELS = [
+    { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', desc: 'Fastest & Balanced' },
+    { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', desc: 'Best Quality (Slower)' },
+    { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite', desc: 'Ultra Fast' }
+  ];
 
   const handleEnhance = async () => {
     if (!prompt.trim()) return;
@@ -33,7 +49,7 @@ export default function App() {
     setError(null);
     setVariations([]);
     try {
-      const results = await generateComponents(prompt);
+      const results = await generateComponents(prompt, selectedModel);
       setVariations(results);
     } catch (err: any) {
       setError(err.message || 'Failed to generate components.');
@@ -112,18 +128,70 @@ export default function App() {
                 />
                 
                 <div className="flex items-center justify-between p-2 mt-2 bg-black/40 rounded-2xl border border-white/5">
-                  <button
-                    onClick={handleEnhance}
-                    disabled={isEnhancing || !prompt.trim() || isGenerating}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isEnhancing ? (
-                      <RefreshCw className="w-4 h-4 animate-spin text-[#F27D26]" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 text-[#F27D26]" />
-                    )}
-                    {isEnhancing ? 'Enhancing...' : 'AI Enhance'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleEnhance}
+                      disabled={isEnhancing || !prompt.trim() || isGenerating}
+                      className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isEnhancing ? (
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#F27D26]" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 text-[#F27D26]" />
+                      )}
+                      {isEnhancing ? 'Enhancing...' : 'AI Enhance'}
+                    </button>
+
+                    <div className="h-6 w-px bg-white/10 mx-2"></div>
+
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                        disabled={isGenerating}
+                        className="flex items-center gap-2 px-3 py-2 bg-transparent text-sm text-white/70 hover:text-white outline-none rounded-lg hover:bg-white/5 transition-all disabled:opacity-50"
+                      >
+                        {MODELS.find(m => m.id === selectedModel)?.name}
+                        <ChevronDown className={cn("w-4 h-4 opacity-50 transition-transform", isModelDropdownOpen && "rotate-180")} />
+                      </button>
+
+                      <AnimatePresence>
+                        {isModelDropdownOpen && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setIsModelDropdownOpen(false)}
+                            />
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute bottom-full left-0 mb-2 w-64 p-1 bg-[#111] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
+                            >
+                              {MODELS.map(model => (
+                                <button
+                                  key={model.id}
+                                  onClick={() => {
+                                    setSelectedModel(model.id);
+                                    setIsModelDropdownOpen(false);
+                                  }}
+                                  className={cn(
+                                    "w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex flex-col gap-0.5",
+                                    selectedModel === model.id 
+                                      ? "bg-[#F27D26]/10 text-[#F27D26]" 
+                                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                                  )}
+                                >
+                                  <span className="font-medium">{model.name}</span>
+                                  <span className="text-xs opacity-60">{model.desc}</span>
+                                </button>
+                              ))}
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
 
                   <button
                     onClick={handleGenerate}
@@ -278,7 +346,7 @@ function VariationCard({ variation, index }: { variation: ComponentVariation; in
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Inject Tailwind into the iframe for preview
+  // Inject Tailwind, React, and Babel into the iframe for preview
   useEffect(() => {
     if (view === 'preview' && iframeRef.current) {
       const doc = iframeRef.current.contentDocument;
@@ -289,6 +357,9 @@ function VariationCard({ variation, index }: { variation: ComponentVariation; in
           <html>
             <head>
               <script src="https://cdn.tailwindcss.com"></script>
+              <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+              <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+              <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
               <style>
                 body { margin: 0; padding: 2rem; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f8fafc; color: #0f172a; }
                 /* Custom scrollbar for iframe */
@@ -299,7 +370,13 @@ function VariationCard({ variation, index }: { variation: ComponentVariation; in
               </style>
             </head>
             <body>
-              ${variation.code}
+              <div id="root"></div>
+              <script type="text/babel" data-type="module">
+                ${variation.code}
+                
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(<GeneratedComponent />);
+              </script>
             </body>
           </html>
         `);
@@ -374,7 +451,7 @@ function VariationCard({ variation, index }: { variation: ComponentVariation; in
               </button>
             </div>
             <SyntaxHighlighter
-              language="html"
+              language="jsx"
               style={vscDarkPlus}
               customStyle={{
                 margin: 0,
