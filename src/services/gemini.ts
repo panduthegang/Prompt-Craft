@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
+import { formatCode } from "../lib/format"
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
@@ -39,7 +40,7 @@ CRITICAL INSTRUCTIONS:
 7. Push the boundaries of design. Use micro-interactions (hover/focus states), beautiful typography, perfect spacing, and stunning visual hierarchy.
 8. Make it look like it belongs in a premium, award-winning SaaS product or a top-tier design agency's portfolio.
 9. Return ONLY the raw JSX code for the component. Do not wrap it in markdown code blocks.
-10. CRITICAL FORMATTING: The JSX code MUST be beautifully formatted with proper indentation (2 spaces) and line breaks. DO NOT return minified code or single-line code. Readability is paramount.
+10. CRITICAL FORMATTING: The JSX code MUST be beautifully formatted with proper indentation (2 spaces) and line breaks. DO NOT return minified code or single-line code. Readability is paramount. Even if you are a fast model, you MUST format the code properly.
 
 Variation ideas to consider (pick 3 distinct, high-end ones that fit the prompt):
 - Apple-esque Glassmorphism & Blur
@@ -79,6 +80,12 @@ Return a JSON array of exactly 3 objects.`,
     if (!text) throw new Error("Empty response from Gemini");
     
     const variations: ComponentVariation[] = JSON.parse(text);
+    
+    // Format the code for each variation
+    for (let i = 0; i < variations.length; i++) {
+      variations[i].code = await formatCode(variations[i].code);
+    }
+    
     return variations;
   } catch (error) {
     console.error("Error generating components:", error);
